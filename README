@@ -1,0 +1,3 @@
+Linux shell scripts for administrative users which are customized to specific hosts or environments, but can be used as templates for customization to different hosts or environments.
+
+Typically those are ad-hoc scripts which use some hard-coded specific names or paths, which need to be changed when using the same script on another system.
