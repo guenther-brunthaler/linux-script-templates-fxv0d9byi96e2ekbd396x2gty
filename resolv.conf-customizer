@@ -1,0 +1,56 @@
+#! /bin/sh
+set -e
+cleanup() {
+	rc=$?
+	test "$T" && rm -- "$T"
+	test $rc = 0 || echo "\"$0\" failed!" >& 2
+}
+T=
+trap cleanup 0
+trap 'exit $?' INT QUIT HUP TERM
+
+preview=false
+while getopts p opt
+do
+	case $opt in
+		p) preview=true;;
+		*) false || exit
+	esac
+done
+shift `expr $OPTIND - 1 || :`
+
+test $# = 0
+
+T=`mktemp -- "${TMPDIR:-/tmp}/${0##*/}.XXXXXXXXXX"`
+
+f=/etc/resolv.conf
+test -f "$f"
+
+awk -f /dev/fd/5 5<< 'EOF' < "$f" > "$T" 
+
+!ns && /nameserver/ {
+	# Prepend the following nameserver line(s) before the original ones:
+	print "nameserver 99.99.99.1"
+	ns=1
+}
+
+!se && /search/ {
+	# Replace all the search line(s) with the following ones:
+	print "search mydomain.test"
+	se=1
+}
+
+# Always print the original lines, too, except for search lines.
+!se {print}
+
+EOF
+
+if $preview
+then
+	echo "PREVIEW:"
+	cat "$T"
+	exit
+fi
+echo "REPLACING $f:"
+cat > "$f" < "$T"
+cat < "$T"
